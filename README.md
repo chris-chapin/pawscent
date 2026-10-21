@@ -17,9 +17,21 @@ Windows 11 desktop app (WinUI 3, .NET 10).
   Profiles\
     <ProfileName>\        one folder per profile (workspace)
       profile.json        header (name, creation time, schema version), then categories, receipts, expenses
+      Receipts\          copies of receipt files picked from outside %LOCALAPPDATA%\Pawscent
 ```
 
 `File > New > Profile` creates a profile folder; `File > Load > Profile` opens an existing one.
+
+An open profile shows these tabs:
+
+- **One tab per year** (every year with expenses, plus the current year; `+` adds an empty year). Add, edit and
+  delete expenses; the add/edit dialog picks or creates the category and receipt. The expense table is sorted oldest
+  to newest, and a second table totals the shown expenses per category and currency. Both tables can be filtered to
+  selected categories.
+- **Categories**: add, rename and delete categories. A category used by an expense cannot be deleted.
+- **Receipts**: receipt files listed by file name. A file added from outside the app folder is copied into the
+  profile's `Receipts` folder first. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be
+  deleted.
 
 Changes to categories, receipts and expenses are saved automatically 3 seconds after the last edit, and also
 when switching profiles or closing the app. Saves write `profile.json.tmp` first and then rename it over
@@ -30,7 +42,7 @@ when switching profiles or closing the app. Saves write `profile.json.tmp` first
 | Path | Purpose |
 | --- | --- |
 | `src/Pawscent.App` | WinUI 3 UI (MVVM via CommunityToolkit.Mvvm) |
-| `src/Pawscent.Core` | UI-free logic: paths, profile storage |
+| `src/Pawscent.Core` | UI-free logic: paths, profile storage, expenses, summaries, receipt files |
 | `tests/Pawscent.Core.Tests` | xUnit tests for Core |
 
 ## Build

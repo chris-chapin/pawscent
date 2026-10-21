@@ -1,3 +1,4 @@
+using Pawscent.App.ViewModels;
 using Pawscent.Core.Profiles;
 
 namespace Pawscent.App.Services;
@@ -13,4 +14,17 @@ public interface IDialogService
 
     /// <summary>Asks a yes/no question. Returns true if the user chose <paramref name="confirmText"/>.</summary>
     Task<bool> ConfirmAsync(string title, string message, string confirmText);
+
+    /// <summary>
+    /// Asks for one line of text. <paramref name="validate"/> returns null for valid text, otherwise a reason; the
+    /// confirm button stays disabled until it passes. Returns null if cancelled.
+    /// </summary>
+    Task<string?> PromptTextAsync(
+        string title, string label, string initialText, string confirmText, Func<string, string?> validate);
+
+    /// <summary>Shows the add/edit expense dialog. Returns true if the expense was saved.</summary>
+    Task<bool> EditExpenseAsync(ExpenseEditorViewModel editor);
+
+    /// <summary>Lets the user choose a receipt file. Returns its full path, or null if cancelled.</summary>
+    Task<string?> PickReceiptFileAsync();
 }

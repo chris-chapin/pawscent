@@ -5,6 +5,8 @@ using Pawscent.App.Services;
 using Pawscent.App.ViewModels;
 using Pawscent.App.Views;
 using Pawscent.Core.Profiles;
+using Windows.Storage.Pickers;
+using WinRT.Interop;
 
 namespace Pawscent.App;
 
@@ -24,6 +26,8 @@ public sealed partial class MainWindow : Window, IDialogService
         {
             if (e.PropertyName == nameof(MainViewModel.WindowTitle))
                 Title = ViewModel.WindowTitle;
+            else if (e.PropertyName == nameof(MainViewModel.CurrentProfileView))
+                ProfileHost.Content = ViewModel.CurrentProfileView is { } profile ? new ProfileView(profile) : null;
         };
         AppWindow.Closing += AppWindow_Closing;
     }
@@ -35,6 +39,24 @@ public sealed partial class MainWindow : Window, IDialogService
 
     public Task<Profile?> PickProfileAsync(IReadOnlyList<Profile> profiles) =>
         new LoadProfileDialog(profiles) { XamlRoot = RootGrid.XamlRoot }.ShowForProfileAsync();
+
+    public Task<string?> PromptTextAsync(
+        string title, string label, string initialText, string confirmText, Func<string, string?> validate) =>
+        new TextPromptDialog(title, label, initialText, confirmText, validate) { XamlRoot = RootGrid.XamlRoot }
+            .ShowForTextAsync();
+
+    public Task<bool> EditExpenseAsync(ExpenseEditorViewModel editor) =>
+        new ExpenseDialog(editor) { XamlRoot = RootGrid.XamlRoot }.ShowForSaveAsync();
+
+    public async Task<string?> PickReceiptFileAsync()
+    {
+        var picker = new FileOpenPicker { ViewMode = PickerViewMode.List, SuggestedStartLocation = PickerLocationId.DocumentsLibrary };
+        picker.FileTypeFilter.Add("*");
+        // Unpackaged apps must tell the picker which window owns it.
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+        var file = await picker.PickSingleFileAsync();
+        return file is null || string.IsNullOrEmpty(file.Path) ? null : file.Path;
+    }
 
     public async Task ShowMessageAsync(string title, string message)
     {

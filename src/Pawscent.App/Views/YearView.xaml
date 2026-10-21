@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Pawscent.App.Views.YearView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Pawscent.App.ViewModels">
+    <UserControl.Resources>
+        <Style x:Key="TableItemStyle" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="MinHeight" Value="36" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Padding="16" RowSpacing="12" ColumnSpacing="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="*" MinWidth="300" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+            <Button Command="{x:Bind ViewModel.AddExpenseCommand}" Style="{StaticResource AccentButtonStyle}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SymbolIcon Symbol="Add" />
+                    <TextBlock Text="Add expense" />
+                </StackPanel>
+            </Button>
+            <Button Command="{x:Bind ViewModel.EditExpenseCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SymbolIcon Symbol="Edit" />
+                    <TextBlock Text="Edit" />
+                </StackPanel>
+            </Button>
+            <Button Command="{x:Bind ViewModel.DeleteExpenseCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SymbolIcon Symbol="Delete" />
+                    <TextBlock Text="Delete" />
+                </StackPanel>
+            </Button>
+            <AppBarSeparator />
+            <DropDownButton>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SymbolIcon Symbol="Filter" />
+                    <TextBlock Text="{x:Bind ViewModel.FilterText, Mode=OneWay}" />
+                </StackPanel>
+                <DropDownButton.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                        <StackPanel Spacing="8" MinWidth="220">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Select all" Command="{x:Bind ViewModel.SelectAllCategoriesCommand}" />
+                                <Button Content="Clear" Command="{x:Bind ViewModel.ClearCategoriesCommand}" />
+                            </StackPanel>
+                            <ScrollViewer MaxHeight="360">
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.CategoryFilters}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:CategoryFilterItem">
+                                            <CheckBox Content="{x:Bind Name}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Flyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+        </StackPanel>
+
+        <!-- Expenses by date, oldest first. -->
+        <Grid Grid.Row="1" RowSpacing="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Expenses" />
+            <Grid Grid.Row="1" Padding="16,0,12,0" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="44" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Date" />
+                <TextBlock Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Description" />
+                <TextBlock Grid.Column="2" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Category" />
+                <TextBlock Grid.Column="3" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Receipt" />
+                <TextBlock Grid.Column="4" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Amount" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="5" Style="{StaticResource BodyStrongTextBlockStyle}" Text="" />
+            </Grid>
+            <ListView Grid.Row="2"
+                      ItemsSource="{x:Bind ViewModel.Expenses}"
+                      SelectedItem="{x:Bind ViewModel.SelectedExpense, Mode=TwoWay}"
+                      SelectionMode="Single"
+                      ItemContainerStyle="{StaticResource TableItemStyle}"
+                      DoubleTapped="Expenses_DoubleTapped"
+                      BorderThickness="1"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      CornerRadius="4">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ExpenseRow">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{x:Bind DateText}" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind Description}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind CategoryName}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="{x:Bind ReceiptName}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="4" VerticalAlignment="Center" Text="{x:Bind AmountText}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="5" VerticalAlignment="Center" Text="{x:Bind Currency}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <TextBlock Grid.Row="3" Text="{x:Bind ViewModel.TotalsText, Mode=OneWay}" TextWrapping="Wrap" />
+        </Grid>
+
+        <!-- Totals per category (and currency) for the expenses shown. -->
+        <Grid Grid.Row="1" Grid.Column="1" RowSpacing="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="By category" />
+            <Grid Grid.Row="1" Padding="16,0,12,0" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="50" />
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="44" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Category" />
+                <TextBlock Grid.Column="1" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Count" HorizontalAlignment="Right" />
+                <TextBlock Grid.Column="2" Style="{StaticResource BodyStrongTextBlockStyle}" Text="Total" HorizontalAlignment="Right" />
+            </Grid>
+            <ListView Grid.Row="2"
+                      ItemsSource="{x:Bind ViewModel.CategoryTotals}"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False"
+                      ItemContainerStyle="{StaticResource TableItemStyle}"
+                      BorderThickness="1"
+                      BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                      CornerRadius="4">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CategoryTotalRow">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="44" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{x:Bind CategoryName}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind CountText}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind TotalText}" HorizontalAlignment="Right" />
+                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="{x:Bind Currency}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
+    </Grid>
+</UserControl>
