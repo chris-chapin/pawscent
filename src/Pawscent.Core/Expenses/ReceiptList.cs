@@ -23,6 +23,9 @@ public sealed class ReceiptList
         }
     }
 
+    /// <summary>Raised after a create, update or delete.</summary>
+    public event EventHandler? Changed;
+
     public IReadOnlyList<Receipt> Items => _items;
 
     public bool Contains(Guid id) => _items.Exists(r => r.Id == id);
@@ -54,6 +57,7 @@ public sealed class ReceiptList
         ThrowIfInvalid(filePath, excludeId: null);
         var receipt = new Receipt(Guid.NewGuid(), filePath);
         _items.Add(receipt);
+        Changed?.Invoke(this, EventArgs.Empty);
         return receipt;
     }
 
@@ -63,6 +67,7 @@ public sealed class ReceiptList
         ThrowIfInvalid(filePath, id);
         var receipt = _items[index] with { FilePath = filePath };
         _items[index] = receipt;
+        Changed?.Invoke(this, EventArgs.Empty);
         return receipt;
     }
 
@@ -73,6 +78,7 @@ public sealed class ReceiptList
         if (_isReferenced(id))
             throw new InvalidOperationException("The receipt is used by one or more expenses.");
         _items.RemoveAt(index);
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     // Set by ExpenseList so receipts in use cannot be deleted.

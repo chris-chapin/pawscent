@@ -36,6 +36,9 @@ public sealed class ExpenseList
 
     public ReceiptList Receipts { get; }
 
+    /// <summary>Raised after a create, update or delete.</summary>
+    public event EventHandler? Changed;
+
     public IReadOnlyList<Expense> Items => _items;
 
     public bool Contains(Guid id) => _items.Exists(e => e.Id == id);
@@ -62,6 +65,7 @@ public sealed class ExpenseList
         var expense = new Expense(
             Guid.NewGuid(), date, amount, currency.ToUpperInvariant(), description.Trim(), categoryId, receiptId);
         _items.Add(expense);
+        Changed?.Invoke(this, EventArgs.Empty);
         return expense;
     }
 
@@ -84,10 +88,15 @@ public sealed class ExpenseList
         ThrowIfInvalid(currency, description, categoryId, receiptId);
         var expense = new Expense(id, date, amount, currency.ToUpperInvariant(), description.Trim(), categoryId, receiptId);
         _items[index] = expense;
+        Changed?.Invoke(this, EventArgs.Empty);
         return expense;
     }
 
-    public void Delete(Guid id) => _items.RemoveAt(IndexOf(id));
+    public void Delete(Guid id)
+    {
+        _items.RemoveAt(IndexOf(id));
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     private string? ValidateFields(string currency, string description, Guid categoryId)
     {

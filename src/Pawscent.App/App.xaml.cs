@@ -27,6 +27,7 @@ public partial class App : Application
     private static ServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton<AppPaths>();
         services.AddSingleton<IProfileService, ProfileService>();
         services.AddSingleton<MainViewModel>();

@@ -10,4 +10,7 @@ public interface IDialogService
     Task<Profile?> PickProfileAsync(IReadOnlyList<Profile> profiles);
 
     Task ShowMessageAsync(string title, string message);
+
+    /// <summary>Asks a yes/no question. Returns true if the user chose <paramref name="confirmText"/>.</summary>
+    Task<bool> ConfirmAsync(string title, string message, string confirmText);
 }
