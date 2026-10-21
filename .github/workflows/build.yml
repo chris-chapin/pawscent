@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Test core
+        run: dotnet test tests/Pawscent.Core.Tests/Pawscent.Core.Tests.csproj -c Release
+
+      - name: Publish win-x64 (self-contained, unpackaged)
+        run: dotnet publish src/Pawscent.App/Pawscent.App.csproj -p:PublishProfile=win-x64
+
+      - name: Check exe exists
+        shell: pwsh
+        run: if (-not (Test-Path publish/win-x64/Pawscent.exe)) { throw "Pawscent.exe missing" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pawscent-win-x64
+          path: publish/win-x64/
