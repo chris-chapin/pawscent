@@ -25,6 +25,9 @@ public sealed class CategoryList
         }
     }
 
+    /// <summary>Raised after a create, update or delete.</summary>
+    public event EventHandler? Changed;
+
     public IReadOnlyList<Category> Items => _items;
 
     public bool Contains(Guid id) => _items.Exists(c => c.Id == id);
@@ -58,6 +61,7 @@ public sealed class CategoryList
         ThrowIfInvalid(name, excludeId: null);
         var category = new Category(Guid.NewGuid(), name);
         _items.Add(category);
+        Changed?.Invoke(this, EventArgs.Empty);
         return category;
     }
 
@@ -67,6 +71,7 @@ public sealed class CategoryList
         ThrowIfInvalid(name, id);
         var category = _items[index] with { Name = name };
         _items[index] = category;
+        Changed?.Invoke(this, EventArgs.Empty);
         return category;
     }
 
@@ -77,6 +82,7 @@ public sealed class CategoryList
         if (_isReferenced(id))
             throw new InvalidOperationException("The category is used by one or more expenses.");
         _items.RemoveAt(index);
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     // Set by ExpenseList so categories in use cannot be deleted.

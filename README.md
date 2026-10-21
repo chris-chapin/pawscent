@@ -16,10 +16,14 @@ Windows 11 desktop app (WinUI 3, .NET 10).
 %LOCALAPPDATA%\Pawscent\
   Profiles\
     <ProfileName>\        one folder per profile (workspace)
-      profile.json        name, creation time, schema version
+      profile.json        header (name, creation time, schema version), then categories, receipts, expenses
 ```
 
 `File > New > Profile` creates a profile folder; `File > Load > Profile` opens an existing one.
+
+Changes to categories, receipts and expenses are saved automatically 3 seconds after the last edit, and also
+when switching profiles or closing the app. Saves write `profile.json.tmp` first and then rename it over
+`profile.json`, so an interrupted save never leaves a half-written file.
 
 ## Projects
 
