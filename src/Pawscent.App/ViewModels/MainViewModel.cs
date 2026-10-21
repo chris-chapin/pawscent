@@ -3,10 +3,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pawscent.App.Services;
 using Pawscent.Core.Profiles;
+using Pawscent.Core.Receipts;
 
 namespace Pawscent.App.ViewModels;
 
-public sealed partial class MainViewModel(IProfileService profiles, TimeProvider timeProvider) : ObservableObject
+public sealed partial class MainViewModel(IProfileService profiles, ReceiptFiles receiptFiles, TimeProvider timeProvider)
+    : ObservableObject
 {
     private ProfileAutoSaver? _autoSaver;
 
@@ -22,6 +24,19 @@ public sealed partial class MainViewModel(IProfileService profiles, TimeProvider
                 CurrentProfile = value?.Profile;
         }
     }
+
+    /// <summary>The tabs of the open profile, or null when no profile is open.</summary>
+    public ProfileViewModel? CurrentProfileView
+    {
+        get;
+        private set
+        {
+            if (SetProperty(ref field, value))
+                OnPropertyChanged(nameof(HasNoProfile));
+        }
+    }
+
+    public bool HasNoProfile => CurrentProfileView is null;
 
     public Profile? CurrentProfile
     {
@@ -117,7 +132,9 @@ public sealed partial class MainViewModel(IProfileService profiles, TimeProvider
         _autoSaver = new ProfileAutoSaver(
             document, profiles, ProfileAutoSaver.DefaultDelay, timeProvider, SynchronizationContext.Current);
         _autoSaver.SaveFailed += OnAutoSaveFailed;
+        CurrentProfileView?.Dispose();
         CurrentDocument = document;
+        CurrentProfileView = new ProfileViewModel(document, Dialogs, receiptFiles, timeProvider);
     }
 
     // Flushes the open profile before switching away from it. Returns false if it could not be saved.

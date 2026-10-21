@@ -36,9 +36,12 @@
             </MenuBarItem>
         </MenuBar>
 
-        <StackPanel Grid.Row="1" Margin="24" Spacing="8">
+        <StackPanel Grid.Row="1" Margin="24" Spacing="8" Visibility="{x:Bind ViewModel.HasNoProfile, Mode=OneWay}">
             <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="{x:Bind ViewModel.HeaderText, Mode=OneWay}" />
-            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind ViewModel.CurrentProfileFolder, Mode=OneWay}" IsTextSelectionEnabled="True" />
         </StackPanel>
+
+        <!-- The open profile's year, category and receipt tabs; set by the code-behind. -->
+        <ContentControl x:Name="ProfileHost" Grid.Row="1"
+                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
     </Grid>
 </Window>
