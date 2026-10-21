@@ -9,9 +9,19 @@ public sealed partial class MainViewModel(IProfileService profiles) : Observable
 {
     public IDialogService Dialogs { get; set; } = null!;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HeaderText), nameof(CurrentProfileFolder), nameof(WindowTitle))]
-    public partial Profile? CurrentProfile { get; set; }
+    public Profile? CurrentProfile
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(HeaderText));
+                OnPropertyChanged(nameof(CurrentProfileFolder));
+                OnPropertyChanged(nameof(WindowTitle));
+            }
+        }
+    }
 
     public string HeaderText => CurrentProfile?.Name ?? "No profile loaded. Use File > New or File > Load.";
 
