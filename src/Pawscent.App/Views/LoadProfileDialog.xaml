@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="Pawscent.App.Views.LoadProfileDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:profiles="using:Pawscent.Core.Profiles"
+    Title="Load profile"
+    PrimaryButtonText="Load"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    IsPrimaryButtonEnabled="False">
+    <ListView x:Name="ProfileList" MinWidth="320" MaxHeight="400" SelectionMode="Single"
+              SelectionChanged="ProfileList_SelectionChanged" DoubleTapped="ProfileList_DoubleTapped">
+        <ListView.ItemTemplate>
+            <DataTemplate x:DataType="profiles:Profile">
+                <StackPanel Padding="0,6">
+                    <TextBlock Text="{x:Bind Name}" />
+                    <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind CreatedDisplay}" />
+                </StackPanel>
+            </DataTemplate>
+        </ListView.ItemTemplate>
+    </ListView>
+</ContentDialog>
