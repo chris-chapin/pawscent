@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Pawscent.Core.Expenses;
 using Pawscent.Core.Profiles;
+using Pawscent.Core.Reports;
 
 namespace Pawscent.App.ViewModels;
 
@@ -44,6 +45,12 @@ public sealed partial class YearViewModel : ObservableObject
         private set => SetProperty(ref field, value);
     } = string.Empty;
 
+    public bool IsCreatingReport
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
     public ExpenseRow? SelectedExpense
     {
         get;
@@ -75,6 +82,24 @@ public sealed partial class YearViewModel : ObservableObject
     private Task DeleteExpenseAsync() =>
         SelectedExpense is null ? Task.CompletedTask : _owner.DeleteExpenseAsync(SelectedExpense.Expense);
 
+    /// <summary>A PDF of the expenses shown, as filtered, with their receipts.</summary>
+    [RelayCommand(CanExecute = nameof(HasExpenses))]
+    private async Task CreateReportAsync()
+    {
+        ReportResult? result;
+        IsCreatingReport = true;
+        try
+        {
+            result = await _owner.GenerateReportAsync(Year, IncludedCategoryIds());
+        }
+        finally
+        {
+            IsCreatingReport = false;
+        }
+        if (result is not null)
+            await _owner.ShowReportAsync(result);
+    }
+
     [RelayCommand]
     private void SelectAllCategories() => SetAllFilters(true);
 
@@ -82,6 +107,11 @@ public sealed partial class YearViewModel : ObservableObject
     private void ClearCategories() => SetAllFilters(false);
 
     private bool HasSelection() => SelectedExpense is not null;
+
+    private bool HasExpenses() => Expenses.Count > 0;
+
+    private HashSet<Guid> IncludedCategoryIds() =>
+        CategoryFilters.Where(f => f.IsSelected).Select(f => f.CategoryId).ToHashSet();
 
     private void SetAllFilters(bool isSelected)
     {
@@ -115,7 +145,7 @@ public sealed partial class YearViewModel : ObservableObject
 
     private void RebuildTables()
     {
-        var included = CategoryFilters.Where(f => f.IsSelected).Select(f => f.CategoryId).ToHashSet();
+        var included = IncludedCategoryIds();
         var expenses = ExpenseSummary.ForYear(_document.Expenses.Items, Year, included.Contains);
         var selectedId = SelectedExpense?.Expense.Id;
 
@@ -123,6 +153,7 @@ public sealed partial class YearViewModel : ObservableObject
         foreach (var expense in expenses)
             Expenses.Add(_owner.CreateRow(expense));
         SelectedExpense = Expenses.FirstOrDefault(r => r.Expense.Id == selectedId);
+        CreateReportCommand.NotifyCanExecuteChanged();
 
         CategoryTotals.Clear();
         foreach (var total in ExpenseSummary.ByCategory(expenses, _document.Categories))

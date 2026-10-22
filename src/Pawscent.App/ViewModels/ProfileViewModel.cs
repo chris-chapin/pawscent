@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -6,6 +8,7 @@ using Pawscent.App.Services;
 using Pawscent.Core.Expenses;
 using Pawscent.Core.Profiles;
 using Pawscent.Core.Receipts;
+using Pawscent.Core.Reports;
 
 namespace Pawscent.App.ViewModels;
 
@@ -18,14 +21,20 @@ public sealed partial class ProfileViewModel : ObservableObject, IDisposable
     private readonly ProfileDocument _document;
     private readonly IDialogService _dialogs;
     private readonly ReceiptFiles _receiptFiles;
+    private readonly ExpenseReportGenerator _reports;
     private readonly TimeProvider _timeProvider;
 
     public ProfileViewModel(
-        ProfileDocument document, IDialogService dialogs, ReceiptFiles receiptFiles, TimeProvider timeProvider)
+        ProfileDocument document,
+        IDialogService dialogs,
+        ReceiptFiles receiptFiles,
+        ExpenseReportGenerator reports,
+        TimeProvider timeProvider)
     {
         _document = document;
         _dialogs = dialogs;
         _receiptFiles = receiptFiles;
+        _reports = reports;
         _timeProvider = timeProvider;
         Categories = new CategoriesViewModel(document, dialogs);
         Receipts = new ReceiptsViewModel(document, dialogs, receiptFiles);
@@ -84,6 +93,44 @@ public sealed partial class ProfileViewModel : ObservableObject, IDisposable
             _document.Expenses.Delete(expense.Id);
     }
 
+    /// <summary>Builds the PDF report of a year's shown expenses in the background. Returns null if it failed.</summary>
+    internal async Task<ReportResult?> GenerateReportAsync(int year, IReadOnlySet<Guid> includedCategories)
+    {
+        // Copied here on the UI thread; the profile may change while the report is built.
+        var report = ExpenseReport.ForYear(_document, year, includedCategories);
+        var paper = DefaultPaper();
+        try
+        {
+            return await Task.Run(() => _reports.Generate(report, paper));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            await _dialogs.ShowMessageAsync("Could not create report", ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>Lists receipts the report had to leave out, then opens the report in the default PDF viewer.</summary>
+    internal async Task ShowReportAsync(ReportResult result)
+    {
+        if (result.Issues.Count > 0)
+        {
+            await _dialogs.ShowMessageAsync(
+                "Some receipts are not in the report",
+                "These receipts were replaced by a notice page:\n\n"
+                + string.Join("\n", result.Issues.Select(i => $"{i.FileName}: {i.Reason}")));
+        }
+        try
+        {
+            Process.Start(new ProcessStartInfo(result.FilePath) { UseShellExecute = true })?.Dispose();
+        }
+        catch (Exception ex) when (ex is Win32Exception or IOException)
+        {
+            await _dialogs.ShowMessageAsync(
+                "Could not open report", $"The report was saved as {result.FilePath}\n\n{ex.Message}");
+        }
+    }
+
     [RelayCommand]
     private async Task AddYearAsync()
     {
@@ -129,6 +176,18 @@ public sealed partial class ProfileViewModel : ObservableObject, IDisposable
         catch (ArgumentException)
         {
             return "USD";
+        }
+    }
+
+    private static ReportPaper DefaultPaper()
+    {
+        try
+        {
+            return ReportPapers.ForRegion(RegionInfo.CurrentRegion.TwoLetterISORegionName);
+        }
+        catch (ArgumentException)
+        {
+            return ReportPaper.A4;
         }
     }
 

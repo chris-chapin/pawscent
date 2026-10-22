@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml;
 using Pawscent.App.ViewModels;
 using Pawscent.Core.Profiles;
 using Pawscent.Core.Receipts;
+using Pawscent.Core.Reports;
 using Pawscent.Core.Storage;
 
 namespace Pawscent.App;
@@ -32,6 +33,8 @@ public partial class App : Application
         services.AddSingleton<AppPaths>();
         services.AddSingleton<IProfileService, ProfileService>();
         services.AddSingleton<ReceiptFiles>();
+        services.AddSingleton<IOfficeConverter, LibreOfficeConverter>();
+        services.AddSingleton<ExpenseReportGenerator>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
         return services.BuildServiceProvider();
