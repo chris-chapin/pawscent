@@ -1,25 +1,21 @@
 using Pawscent.Core.Expenses;
 using Pawscent.Core.Profiles;
-using Pawscent.Core.Storage;
 
 namespace Pawscent.Core.Receipts;
 
 /// <summary>
-/// Keeps receipt files inside the app folder. A file picked from elsewhere is copied into the profile's Receipts
-/// folder, so the profile never depends on files the user might move or delete.
+/// Keeps each profile's receipt files in its own Receipts folder. Every file the user adds is copied there, so the
+/// profile never depends on files that might be moved, changed or deleted elsewhere, including by another profile.
 /// </summary>
-public sealed class ReceiptFiles(AppPaths paths)
+public sealed class ReceiptFiles
 {
     public const string FolderName = "Receipts";
 
     public static string FolderFor(Profile profile) => Path.Combine(profile.FolderPath, FolderName);
 
-    /// <summary>True if <paramref name="filePath"/> is somewhere under the app folder.</summary>
-    public bool IsInsideAppFolder(string filePath) => IsUnder(filePath, paths.Root);
-
     /// <summary>
-    /// Adds <paramref name="sourcePath"/> to the profile's receipts and returns the receipt. A file outside the app
-    /// folder is copied into the profile's Receipts folder first; a file already in the list is returned as is.
+    /// Copies <paramref name="sourcePath"/> into the profile's Receipts folder and adds the copy to the profile's
+    /// receipts. A file already in that folder is added without copying; one already in the list is returned as is.
     /// </summary>
     public Receipt Import(ProfileDocument document, string sourcePath)
     {
@@ -31,10 +27,10 @@ public sealed class ReceiptFiles(AppPaths paths)
         if (existing is not null)
             return existing;
 
+        var folder = FolderFor(document.Profile);
         var storedPath = fullPath;
-        if (!IsInsideAppFolder(fullPath))
+        if (!IsUnder(fullPath, folder))
         {
-            var folder = FolderFor(document.Profile);
             Directory.CreateDirectory(folder);
             storedPath = UniquePath(folder, Path.GetFileName(fullPath));
             File.Copy(fullPath, storedPath, overwrite: false);

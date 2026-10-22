@@ -23,6 +23,8 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
     private static readonly (double Width, double Height) Letter = (612, 792);
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "pawscent-tests-" + Guid.NewGuid().ToString("N"));
+    private readonly string _outputFolder;
+    private readonly string _outputPath;
     private readonly AppPaths _paths;
     private readonly ProfileDocument _document;
     private readonly Category _vet;
@@ -32,6 +34,10 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
     public ExpenseReportGeneratorTests()
     {
         _paths = new AppPaths(Path.Combine(_root, "app"));
+        // Where the user chose to save, outside the app folder.
+        _outputFolder = Path.Combine(_root, "Documents");
+        Directory.CreateDirectory(_outputFolder);
+        _outputPath = Path.Combine(_outputFolder, "report.pdf");
         var service = new ProfileService(_paths);
         service.Create("Home");
         _document = service.Open("Home");
@@ -183,7 +189,7 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
     {
         Add(1, Receipt(WritePdf("single.pdf", 301)));
 
-        var result = _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.A4);
+        var result = _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.A4, _outputPath);
 
         var (width, height) = ReportPdf.Open(result.FilePath).PageSizes[0];
         Assert.Equal(595.3, width, precision: 1);
@@ -191,28 +197,50 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
     }
 
     [Fact]
-    public void Generate_SavesInReportsFolderReplacingEarlierReport()
+    public void Generate_WritesChosenFileReplacingWhatWasThere()
     {
         Add(1, Receipt(WritePdf("single.pdf", 301)));
+        File.WriteAllText(_outputPath, "an older file");
 
-        var first = Generate();
-        var second = Generate();
+        var result = Generate();
 
-        var expected = Path.Combine(ExpenseReportGenerator.FolderFor(_document.Profile), "Home 2026 expenses.pdf");
-        Assert.Equal(expected, first.FilePath);
-        Assert.Equal(expected, second.FilePath);
-        Assert.Equal([expected], Directory.EnumerateFileSystemEntries(ExpenseReportGenerator.FolderFor(_document.Profile)));
+        Assert.Equal(_outputPath, result.FilePath);
+        Assert.Equal([Letter, (301, 500)], ReportPdf.Open(_outputPath).PageSizes);
+        Assert.Equal([_outputPath], Directory.EnumerateFileSystemEntries(_outputFolder));
     }
 
     [Fact]
-    public void Generate_Cancelled_WritesNothing()
+    public void Generate_FolderMissing_ThrowsIOExceptionNamingTheFile()
     {
         Add(1, Receipt(WritePdf("single.pdf", 301)));
+        var path = Path.Combine(_outputFolder, "gone", "report.pdf");
 
-        Assert.Throws<OperationCanceledException>(() =>
-            _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.Letter, new CancellationToken(canceled: true)));
-        Assert.False(Directory.Exists(ExpenseReportGenerator.FolderFor(_document.Profile)));
+        var ex = Assert.Throws<IOException>(() =>
+            _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.Letter, path));
+
+        Assert.StartsWith("\"report.pdf\" could not be saved.", ex.Message);
     }
+
+    [Fact]
+    public void Generate_Fails_RemovesEmptyFileButKeepsExistingReport()
+    {
+        Add(1, Receipt(WritePdf("single.pdf", 301)));
+        var empty = Path.Combine(_outputFolder, "empty.pdf");
+        File.WriteAllText(empty, string.Empty);
+        File.WriteAllText(_outputPath, "an older report");
+        var cancelled = new CancellationToken(canceled: true);
+        var report = ExpenseReport.ForYear(_document, 2026);
+
+        Assert.Throws<OperationCanceledException>(() => _generator.Generate(report, ReportPaper.Letter, empty, cancelled));
+        Assert.Throws<OperationCanceledException>(() => _generator.Generate(report, ReportPaper.Letter, _outputPath, cancelled));
+
+        Assert.False(File.Exists(empty));
+        Assert.Equal("an older report", File.ReadAllText(_outputPath));
+    }
+
+    [Fact]
+    public void SuggestedName_IsProfileYearAndExpenses() =>
+        Assert.Equal("Home 2026 expenses", ExpenseReportGenerator.SuggestedName(_document.Profile, 2026));
 
     [Theory]
     [InlineData("US", ReportPaper.Letter)]
@@ -234,7 +262,8 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
         Assert.True(pdf.PageCount >= 1);
     }
 
-    private ReportResult Generate() => _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.Letter);
+    private ReportResult Generate() =>
+        _generator.Generate(ExpenseReport.ForYear(_document, 2026), ReportPaper.Letter, _outputPath);
 
     private Expense Add(int day, Receipt receipt, string description = "Item") =>
         _document.Expenses.Create(new DateOnly(2026, 3, day), 10m, "USD", description, _vet.Id, receipt.Id);

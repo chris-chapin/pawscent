@@ -1,7 +1,7 @@
 namespace Pawscent.Core.Storage;
 
 /// <summary>
-/// All application data lives under %LOCALAPPDATA%\Pawscent. Nothing is read or written elsewhere.
+/// All application data lives on this PC under %LOCALAPPDATA%\Pawscent. Other files are only those the user picks.
 /// </summary>
 public sealed class AppPaths
 {

@@ -58,6 +58,19 @@ public sealed partial class MainWindow : Window, IDialogService
         return file is null || string.IsNullOrEmpty(file.Path) ? null : file.Path;
     }
 
+    public async Task<string?> PickReportFileAsync(string suggestedName)
+    {
+        var picker = new FileSavePicker
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            SuggestedFileName = suggestedName,
+        };
+        picker.FileTypeChoices.Add("PDF document", new List<string> { ".pdf" });
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+        var file = await picker.PickSaveFileAsync();
+        return file is null || string.IsNullOrEmpty(file.Path) ? null : file.Path;
+    }
+
     public async Task ShowMessageAsync(string title, string message)
     {
         var dialog = new ContentDialog

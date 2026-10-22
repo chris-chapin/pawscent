@@ -82,15 +82,19 @@ public sealed partial class YearViewModel : ObservableObject
     private Task DeleteExpenseAsync() =>
         SelectedExpense is null ? Task.CompletedTask : _owner.DeleteExpenseAsync(SelectedExpense.Expense);
 
-    /// <summary>A PDF of the expenses shown, as filtered, with their receipts.</summary>
+    /// <summary>A PDF of the expenses shown, as filtered, with their receipts, saved where the user chooses.</summary>
     [RelayCommand(CanExecute = nameof(HasExpenses))]
     private async Task CreateReportAsync()
     {
+        var path = await _owner.PickReportFileAsync(Year);
+        if (path is null)
+            return;
+
         ReportResult? result;
         IsCreatingReport = true;
         try
         {
-            result = await _owner.GenerateReportAsync(Year, IncludedCategoryIds());
+            result = await _owner.GenerateReportAsync(Year, IncludedCategoryIds(), path);
         }
         finally
         {

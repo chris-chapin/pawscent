@@ -27,4 +27,10 @@ public interface IDialogService
 
     /// <summary>Lets the user choose a receipt file. Returns its full path, or null if cancelled.</summary>
     Task<string?> PickReceiptFileAsync();
+
+    /// <summary>
+    /// Asks where to save a PDF report, starting from <paramref name="suggestedName"/> (no extension). Returns the full
+    /// path, or null if cancelled.
+    /// </summary>
+    Task<string?> PickReportFileAsync(string suggestedName);
 }

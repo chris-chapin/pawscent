@@ -72,7 +72,7 @@
                     ToolTipService.ToolTip="Create a PDF of the expenses shown, with their receipts">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE9F9;" />
-                    <TextBlock Text="Create report" />
+                    <TextBlock Text="Create report..." />
                 </StackPanel>
             </Button>
             <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsCreatingReport, Mode=OneWay}" />

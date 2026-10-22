@@ -4,8 +4,10 @@ Windows 11 desktop app (WinUI 3, .NET 10).
 
 ## Principles
 
-- **Local only.** The app reads and writes only under `%LOCALAPPDATA%\Pawscent`. It makes no network
-  connections and references no networking packages; the Store manifest declares no `internetClient` capability.
+- **Local only.** Pawscent works without an Internet connection and never stores files in the cloud. It makes no
+  network connections and references no networking or cloud packages; the Store manifest declares no `internetClient`
+  capability. Its own data lives on this PC under `%LOCALAPPDATA%\Pawscent`; other local files are used when you pick
+  them (receipts to add, the PDF report to save).
 - **No installer required.** The default build is a self-contained folder: copy it anywhere and run `Pawscent.exe`.
   .NET and the Windows App SDK are bundled.
 - **Store-ready.** `Package.appxmanifest` and a `Store` publish profile are kept so an MSIX can be produced later.
@@ -17,8 +19,7 @@ Windows 11 desktop app (WinUI 3, .NET 10).
   Profiles\
     <ProfileName>\        one folder per profile (workspace)
       profile.json        header (name, creation time, schema version), then categories, receipts, expenses
-      Receipts\          copies of receipt files picked from outside %LOCALAPPDATA%\Pawscent
-      Reports\           PDF reports, one per year ("<ProfileName> <year> expenses.pdf")
+      Receipts\          copies of the profile's receipt files
   Temp\                  scratch files while a report is built (deleted afterwards)
   LibreOffice\           LibreOffice's settings while it converts receipts for a report
 ```
@@ -30,11 +31,11 @@ An open profile shows these tabs:
 - **One tab per year** (every year with expenses, plus the current year; `+` adds an empty year). Add, edit and
   delete expenses; the add/edit dialog picks or creates the category and receipt. The expense table is sorted oldest
   to newest, and a second table totals the shown expenses per category and currency. Both tables can be filtered to
-  selected categories. **Create report** makes a PDF of the expenses shown (see [Reports](#reports)).
+  selected categories. **Create report...** saves a PDF of the expenses shown (see [Reports](#reports)).
 - **Categories**: add, rename and delete categories. A category used by an expense cannot be deleted.
-- **Receipts**: receipt files listed by file name. A file added from outside the app folder is copied into the
-  profile's `Receipts` folder first. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be
-  deleted.
+- **Receipts**: receipt files listed by file name. Every file added (here or in the expense dialog) is copied into
+  the profile's `Receipts` folder first, so the profile never depends on the original; a file already in that folder
+  is used as is. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be deleted.
 
 Changes to categories, receipts and expenses are saved automatically 3 seconds after the last edit, and also
 when switching profiles or closing the app. Saves write `profile.json.tmp` first and then rename it over
@@ -42,9 +43,10 @@ when switching profiles or closing the app. Saves write `profile.json.tmp` first
 
 ## Reports
 
-**Create report** on a year tab builds a PDF of the expenses that tab shows, with the same category filter, and
-opens it in the default PDF viewer. It is saved in the profile's `Reports` folder and replaces the previous report
-for that year (if that one is open in a viewer and locked, the new one gets a ` (2)` name).
+**Create report...** on a year tab asks where to save the PDF (suggesting `Documents\<ProfileName> <year>
+expenses.pdf`), builds a PDF of the expenses that tab shows, with the same category filter, and opens it in the
+default PDF viewer. Saving over an existing file replaces it; if that file is open in another app, Pawscent says so and
+the old file is kept.
 
 - **Summary first.** The first pages repeat the year tab: the expense table and the totals per category. It works as
   the table of contents: each line names the page its receipt starts on, and clicking the line jumps there.
@@ -57,9 +59,9 @@ for that year (if that one is open in a viewer and locked, the new one gets a ` 
 - **Bookmarks** (PDF outline): *Summary*, then *Receipts* with one entry per expense.
 - Paper is US Letter where that is the usual size (US, Canada, Mexico and a few others), otherwise A4.
 
-Besides receipts, a report reads only the Windows font Segoe UI (Arial if missing) and runs LibreOffice from its
-install folder; LibreOffice's own settings are kept in `%LOCALAPPDATA%\Pawscent\LibreOffice`. PDFs are built with
-PDFsharp and MigraDoc **6.2.4**, the last MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
+Reports use the Windows font Segoe UI (Arial if missing). LibreOffice runs offline with its own settings in
+`%LOCALAPPDATA%\Pawscent\LibreOffice`, apart from yours. PDFs are built with PDFsharp and MigraDoc **6.2.4**, the last
+MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
 
 ## Projects
 

@@ -93,15 +93,19 @@ public sealed partial class ProfileViewModel : ObservableObject, IDisposable
             _document.Expenses.Delete(expense.Id);
     }
 
+    /// <summary>Asks where to save a year's report. Returns the path, or null if cancelled.</summary>
+    internal Task<string?> PickReportFileAsync(int year) =>
+        _dialogs.PickReportFileAsync(ExpenseReportGenerator.SuggestedName(_document.Profile, year));
+
     /// <summary>Builds the PDF report of a year's shown expenses in the background. Returns null if it failed.</summary>
-    internal async Task<ReportResult?> GenerateReportAsync(int year, IReadOnlySet<Guid> includedCategories)
+    internal async Task<ReportResult?> GenerateReportAsync(int year, IReadOnlySet<Guid> includedCategories, string path)
     {
         // Copied here on the UI thread; the profile may change while the report is built.
         var report = ExpenseReport.ForYear(_document, year, includedCategories);
         var paper = DefaultPaper();
         try
         {
-            return await Task.Run(() => _reports.Generate(report, paper));
+            return await Task.Run(() => _reports.Generate(report, paper, path));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
