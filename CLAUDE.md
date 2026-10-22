@@ -3,7 +3,7 @@
 Windows 11 desktop app. WinUI 3 + .NET 10.
 
 ## Requirements (do not violate)
-- **Local only.** Read/write only under `%LOCALAPPDATA%\Pawscent` (via `AppPaths`), except files the user picks in a file dialog (receipt import, report Save As). No network access, no HTTP/cloud packages, no `internetClient` capability.
+- **Local only** = works offline and never stores files in the cloud. No network access, no HTTP/cloud packages or cloud storage, no `internetClient` capability. Local files are fine: app data lives under `%LOCALAPPDATA%\Pawscent` (via `AppPaths`); other files are read/written where the user picks them (receipt import, report Save As).
 - **Standalone exe by default.** Unpackaged (`WindowsPackageType=None`), self-contained .NET + Windows App SDK; `dotnet publish src/Pawscent.App -p:PublishProfile=win-x64` → `publish\win-x64\Pawscent.exe`, runs with no installs.
 - **Keep Store publishing possible.** Don't remove `Package.appxmanifest`, `Assets/`, or the `Store` publish profile.
 

@@ -4,9 +4,10 @@ Windows 11 desktop app (WinUI 3, .NET 10).
 
 ## Principles
 
-- **Local only.** The app reads and writes only under `%LOCALAPPDATA%\Pawscent`, plus files you pick yourself in a
-  file dialog (receipts to add, the PDF report to save). It makes no network
-  connections and references no networking packages; the Store manifest declares no `internetClient` capability.
+- **Local only.** Pawscent works without an Internet connection and never stores files in the cloud. It makes no
+  network connections and references no networking or cloud packages; the Store manifest declares no `internetClient`
+  capability. Its own data lives on this PC under `%LOCALAPPDATA%\Pawscent`; other local files are used when you pick
+  them (receipts to add, the PDF report to save).
 - **No installer required.** The default build is a self-contained folder: copy it anywhere and run `Pawscent.exe`.
   .NET and the Windows App SDK are bundled.
 - **Store-ready.** `Package.appxmanifest` and a `Store` publish profile are kept so an MSIX can be produced later.
@@ -58,9 +59,9 @@ the old file is kept.
 - **Bookmarks** (PDF outline): *Summary*, then *Receipts* with one entry per expense.
 - Paper is US Letter where that is the usual size (US, Canada, Mexico and a few others), otherwise A4.
 
-Besides receipts, a report reads only the Windows font Segoe UI (Arial if missing) and runs LibreOffice from its
-install folder; LibreOffice's own settings are kept in `%LOCALAPPDATA%\Pawscent\LibreOffice`. PDFs are built with
-PDFsharp and MigraDoc **6.2.4**, the last MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
+Reports use the Windows font Segoe UI (Arial if missing). LibreOffice runs offline with its own settings in
+`%LOCALAPPDATA%\Pawscent\LibreOffice`, apart from yours. PDFs are built with PDFsharp and MigraDoc **6.2.4**, the last
+MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
 
 ## Projects
 
