@@ -19,7 +19,7 @@ Windows 11 desktop app (WinUI 3, .NET 10).
   Profiles\
     <ProfileName>\        one folder per profile (workspace)
       profile.json        header (name, creation time, schema version), then categories, receipts, expenses
-      Receipts\          copies of receipt files picked from outside %LOCALAPPDATA%\Pawscent
+      Receipts\          copies of the profile's receipt files
   Temp\                  scratch files while a report is built (deleted afterwards)
   LibreOffice\           LibreOffice's settings while it converts receipts for a report
 ```
@@ -33,9 +33,9 @@ An open profile shows these tabs:
   to newest, and a second table totals the shown expenses per category and currency. Both tables can be filtered to
   selected categories. **Create report...** saves a PDF of the expenses shown (see [Reports](#reports)).
 - **Categories**: add, rename and delete categories. A category used by an expense cannot be deleted.
-- **Receipts**: receipt files listed by file name. A file added from outside the app folder is copied into the
-  profile's `Receipts` folder first. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be
-  deleted.
+- **Receipts**: receipt files listed by file name. Every file added (here or in the expense dialog) is copied into
+  the profile's `Receipts` folder first, so the profile never depends on the original; a file already in that folder
+  is used as is. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be deleted.
 
 Changes to categories, receipts and expenses are saved automatically 3 seconds after the last edit, and also
 when switching profiles or closing the app. Saves write `profile.json.tmp` first and then rename it over

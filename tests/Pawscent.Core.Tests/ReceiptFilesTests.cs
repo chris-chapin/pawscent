@@ -9,16 +9,17 @@ public sealed class ReceiptFilesTests : IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "pawscent-tests-" + Guid.NewGuid().ToString("N"));
     private readonly string _outside;
+    private readonly AppPaths _paths;
     private readonly ReceiptFiles _files;
     private readonly ProfileDocument _document;
 
     public ReceiptFilesTests()
     {
-        var paths = new AppPaths(Path.Combine(_root, "app"));
+        _paths = new AppPaths(Path.Combine(_root, "app"));
         _outside = Path.Combine(_root, "downloads");
         Directory.CreateDirectory(_outside);
-        _files = new ReceiptFiles(paths);
-        var service = new ProfileService(paths);
+        _files = new ReceiptFiles();
+        var service = new ProfileService(_paths);
         service.Create("Home");
         _document = service.Open("Home");
     }
@@ -58,23 +59,53 @@ public sealed class ReceiptFilesTests : IDisposable
     }
 
     [Fact]
-    public void Import_FileInsideAppFolder_IsUsedInPlace()
+    public void Import_FileElsewhereInAppFolder_IsCopiedToo()
     {
-        var source = WriteFile(_document.Profile.FolderPath, "scan.png", "img");
+        var inProfileFolder = WriteFile(_document.Profile.FolderPath, "scan.png", "img");
+        var otherReceipts = Path.Combine(_paths.ProfilesRoot, "Other", ReceiptFiles.FolderName);
+        Directory.CreateDirectory(otherReceipts);
+        var inOtherProfile = WriteFile(otherReceipts, "vet.pdf", "bill");
+
+        var first = _files.Import(_document, inProfileFolder);
+        var second = _files.Import(_document, inOtherProfile);
+
+        var folder = ReceiptFiles.FolderFor(_document.Profile);
+        Assert.Equal(Path.Combine(folder, "scan.png"), first.FilePath);
+        Assert.Equal(Path.Combine(folder, "vet.pdf"), second.FilePath);
+        Assert.True(File.Exists(inProfileFolder));
+        Assert.True(File.Exists(inOtherProfile));
+    }
+
+    [Fact]
+    public void Import_FileInSiblingFolderWithSamePrefix_IsCopied()
+    {
+        var sibling = Path.Combine(_document.Profile.FolderPath, ReceiptFiles.FolderName + "2");
+        Directory.CreateDirectory(sibling);
+
+        var receipt = _files.Import(_document, WriteFile(sibling, "vet.pdf", "bill"));
+
+        Assert.Equal(Path.Combine(ReceiptFiles.FolderFor(_document.Profile), "vet.pdf"), receipt.FilePath);
+    }
+
+    [Fact]
+    public void Import_FileAlreadyInReceiptsFolder_IsAddedWithoutCopying()
+    {
+        var folder = ReceiptFiles.FolderFor(_document.Profile);
+        Directory.CreateDirectory(folder);
+        var source = WriteFile(folder, "scan.png", "img");
 
         var receipt = _files.Import(_document, source);
 
         Assert.Equal(source, receipt.FilePath);
-        Assert.False(Directory.Exists(ReceiptFiles.FolderFor(_document.Profile)));
+        Assert.Equal([source], Directory.EnumerateFiles(folder));
     }
 
     [Fact]
     public void Import_FileAlreadyInList_ReturnsExistingReceipt()
     {
-        var source = WriteFile(_document.Profile.FolderPath, "scan.png", "img");
-        var first = _files.Import(_document, source);
+        var first = _files.Import(_document, WriteFile(_outside, "vet.pdf", "bill"));
 
-        Assert.Same(first, _files.Import(_document, source));
+        Assert.Same(first, _files.Import(_document, first.FilePath));
         Assert.Single(_document.Receipts.Items);
     }
 
@@ -83,19 +114,11 @@ public sealed class ReceiptFilesTests : IDisposable
         Assert.Throws<FileNotFoundException>(() => _files.Import(_document, Path.Combine(_outside, "missing.pdf")));
 
     [Fact]
-    public void IsInsideAppFolder_DoesNotMatchSiblingWithSamePrefix()
-    {
-        var sibling = Path.Combine(_root, "appendix", "a.pdf");
-
-        Assert.False(_files.IsInsideAppFolder(sibling));
-        Assert.True(_files.IsInsideAppFolder(Path.Combine(_root, "app", "a.pdf")));
-    }
-
-    [Fact]
     public void DeleteStoredCopy_DeletesOnlyCopiesInReceiptsFolder()
     {
         var copied = _files.Import(_document, WriteFile(_outside, "vet.pdf", "bill"));
-        var inPlace = _files.Import(_document, WriteFile(_document.Profile.FolderPath, "scan.png", "img"));
+        // A receipt pointing outside the Receipts folder, as older versions allowed.
+        var inPlace = _document.Receipts.Create(WriteFile(_document.Profile.FolderPath, "scan.png", "img"));
 
         Assert.True(_files.DeleteStoredCopy(_document.Profile, copied));
         Assert.False(File.Exists(copied.FilePath));
