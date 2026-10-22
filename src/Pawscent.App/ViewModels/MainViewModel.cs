@@ -4,10 +4,12 @@ using CommunityToolkit.Mvvm.Input;
 using Pawscent.App.Services;
 using Pawscent.Core.Profiles;
 using Pawscent.Core.Receipts;
+using Pawscent.Core.Reports;
 
 namespace Pawscent.App.ViewModels;
 
-public sealed partial class MainViewModel(IProfileService profiles, ReceiptFiles receiptFiles, TimeProvider timeProvider)
+public sealed partial class MainViewModel(
+    IProfileService profiles, ReceiptFiles receiptFiles, ExpenseReportGenerator reports, TimeProvider timeProvider)
     : ObservableObject
 {
     private ProfileAutoSaver? _autoSaver;
@@ -134,7 +136,7 @@ public sealed partial class MainViewModel(IProfileService profiles, ReceiptFiles
         _autoSaver.SaveFailed += OnAutoSaveFailed;
         CurrentProfileView?.Dispose();
         CurrentDocument = document;
-        CurrentProfileView = new ProfileViewModel(document, Dialogs, receiptFiles, timeProvider);
+        CurrentProfileView = new ProfileViewModel(document, Dialogs, receiptFiles, reports, timeProvider);
     }
 
     // Flushes the open profile before switching away from it. Returns false if it could not be saved.

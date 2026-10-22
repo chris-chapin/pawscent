@@ -3,4 +3,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Pawscent.Core</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pinned: 6.2.4 is the last MIT release. PDFsharp 6.5 and later are AGPL-3.0. -->
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="PDFsharp-MigraDoc" Version="6.2.4" />
+    <!-- PDFsharp 6.2.4 references 8.0.1, which has known vulnerabilities (NU1902/NU1903). -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
 </Project>
