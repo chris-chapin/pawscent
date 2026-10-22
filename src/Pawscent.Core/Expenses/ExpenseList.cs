@@ -70,6 +70,10 @@ public sealed class ExpenseList
     }
 
     /// <summary>Adds a new receipt for <paramref name="receiptFilePath"/> and an expense that refers to it.</summary>
+    /// <remarks>
+    /// Records the path as given. The app adds receipt files through ReceiptFiles.Import, which copies them into the
+    /// profile's Receipts folder.
+    /// </remarks>
     public Expense CreateWithNewReceipt(
         DateOnly date, decimal amount, string currency, string description, Guid categoryId, string receiptFilePath)
     {
