@@ -38,21 +38,17 @@ public sealed record ReportResult(string FilePath, IReadOnlyList<ReportIssue> Is
 /// </summary>
 public sealed class ExpenseReportGenerator(AppPaths paths, IOfficeConverter officeConverter, TimeProvider timeProvider)
 {
-    public const string FolderName = "Reports";
-
-    // How many file names to try when earlier reports are open in a PDF viewer and can't be replaced.
-    private const int MaxFileNameAttempts = 20;
-
-    public static string FolderFor(Profile profile) => Path.Combine(profile.FolderPath, FolderName);
+    /// <summary>The file name a Save As dialog suggests, without extension, such as "Home 2026 expenses".</summary>
+    public static string SuggestedName(Profile profile, int year) => $"{profile.Name} {year} expenses";
 
     /// <summary>
-    /// Writes the report to the profile's Reports folder, replacing an earlier report of the same year, and returns
-    /// its path. A receipt that can't be read gets a notice page instead and is listed in the result.
+    /// Writes the report to <paramref name="outputPath"/>, replacing any file there. A receipt that can't be read gets a
+    /// notice page instead and is listed in the result.
     /// </summary>
     /// <exception cref="IOException">The report could not be saved.</exception>
-    /// <exception cref="UnauthorizedAccessException">The report could not be saved.</exception>
     /// <exception cref="InvalidOperationException">No font for the report was found.</exception>
-    public ReportResult Generate(ExpenseReport report, ReportPaper paper, CancellationToken cancellationToken = default)
+    public ReportResult Generate(
+        ExpenseReport report, ReportPaper paper, string outputPath, CancellationToken cancellationToken = default)
     {
         ReportFonts.EnsureRegistered();
         var workFolder = Path.Combine(paths.TempRoot, Guid.NewGuid().ToString("N"));
@@ -70,7 +66,15 @@ public sealed class ExpenseReportGenerator(AppPaths paths, IOfficeConverter offi
 
             output.Info.Title = $"{report.Profile.Name} – {report.Year} expenses";
             output.Info.Creator = "Pawscent";
-            return new ReportResult(Save(output, report), issues);
+            Save(output, outputPath);
+            return new ReportResult(outputPath, issues);
+        }
+        catch
+        {
+            // The Save As dialog may already have created the file, empty; don't leave that behind.
+            if (File.Exists(outputPath) && new FileInfo(outputPath).Length == 0)
+                TryDelete(() => File.Delete(outputPath));
+            throw;
         }
         finally
         {
@@ -168,29 +172,21 @@ public sealed class ExpenseReportGenerator(AppPaths paths, IOfficeConverter offi
         output.PageMode = PdfPageMode.UseOutlines;
     }
 
-    // Saves to a temporary file first so a failed save never leaves half a report.
-    private static string Save(PdfDocument output, ExpenseReport report)
+    // Saves next to the target first and then replaces it, so a failed save never leaves half a report.
+    private static void Save(PdfDocument output, string path)
     {
-        var folder = FolderFor(report.Profile);
-        Directory.CreateDirectory(folder);
-        var tempPath = Path.Combine(folder, Guid.NewGuid().ToString("N") + ".tmp");
+        var tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
         try
         {
             output.Save(tempPath);
-            var baseName = $"{report.Profile.Name} {report.Year} expenses";
-            for (var n = 1; ; n++)
-            {
-                var path = Path.Combine(folder, n == 1 ? baseName + ".pdf" : $"{baseName} ({n}).pdf");
-                try
-                {
-                    File.Move(tempPath, path, overwrite: true);
-                    return path;
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && n < MaxFileNameAttempts)
-                {
-                    // Probably open in a PDF viewer; try the next name.
-                }
-            }
+            File.Move(tempPath, path, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new IOException(
+                $"\"{Path.GetFileName(path)}\" could not be saved. If it is open in another app, close it and try again." +
+                $"\n\n{ex.Message}",
+                ex);
         }
         finally
         {

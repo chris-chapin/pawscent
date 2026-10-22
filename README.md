@@ -4,7 +4,8 @@ Windows 11 desktop app (WinUI 3, .NET 10).
 
 ## Principles
 
-- **Local only.** The app reads and writes only under `%LOCALAPPDATA%\Pawscent`. It makes no network
+- **Local only.** The app reads and writes only under `%LOCALAPPDATA%\Pawscent`, plus files you pick yourself in a
+  file dialog (receipts to add, the PDF report to save). It makes no network
   connections and references no networking packages; the Store manifest declares no `internetClient` capability.
 - **No installer required.** The default build is a self-contained folder: copy it anywhere and run `Pawscent.exe`.
   .NET and the Windows App SDK are bundled.
@@ -18,7 +19,6 @@ Windows 11 desktop app (WinUI 3, .NET 10).
     <ProfileName>\        one folder per profile (workspace)
       profile.json        header (name, creation time, schema version), then categories, receipts, expenses
       Receipts\          copies of receipt files picked from outside %LOCALAPPDATA%\Pawscent
-      Reports\           PDF reports, one per year ("<ProfileName> <year> expenses.pdf")
   Temp\                  scratch files while a report is built (deleted afterwards)
   LibreOffice\           LibreOffice's settings while it converts receipts for a report
 ```
@@ -30,7 +30,7 @@ An open profile shows these tabs:
 - **One tab per year** (every year with expenses, plus the current year; `+` adds an empty year). Add, edit and
   delete expenses; the add/edit dialog picks or creates the category and receipt. The expense table is sorted oldest
   to newest, and a second table totals the shown expenses per category and currency. Both tables can be filtered to
-  selected categories. **Create report** makes a PDF of the expenses shown (see [Reports](#reports)).
+  selected categories. **Create report...** saves a PDF of the expenses shown (see [Reports](#reports)).
 - **Categories**: add, rename and delete categories. A category used by an expense cannot be deleted.
 - **Receipts**: receipt files listed by file name. A file added from outside the app folder is copied into the
   profile's `Receipts` folder first. Deleting a receipt also deletes that copy. A receipt used by an expense cannot be
@@ -42,9 +42,10 @@ when switching profiles or closing the app. Saves write `profile.json.tmp` first
 
 ## Reports
 
-**Create report** on a year tab builds a PDF of the expenses that tab shows, with the same category filter, and
-opens it in the default PDF viewer. It is saved in the profile's `Reports` folder and replaces the previous report
-for that year (if that one is open in a viewer and locked, the new one gets a ` (2)` name).
+**Create report...** on a year tab asks where to save the PDF (suggesting `Documents\<ProfileName> <year>
+expenses.pdf`), builds a PDF of the expenses that tab shows, with the same category filter, and opens it in the
+default PDF viewer. Saving over an existing file replaces it; if that file is open in another app, Pawscent says so and
+the old file is kept.
 
 - **Summary first.** The first pages repeat the year tab: the expense table and the totals per category. It works as
   the table of contents: each line names the page its receipt starts on, and clicking the line jumps there.
