@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.Extensions.Time.Testing;
 using Pawscent.Core.Expenses;
 using Pawscent.Core.Profiles;
@@ -164,11 +165,11 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
     public void Generate_ConversionFails_GetsNoticePageWithReason()
     {
         Add(1, Receipt(WriteFile("bill.xlsx", "spreadsheet")));
-        _converter.Failure = "LibreOffice is needed.";
+        _converter.Failure = "Microsoft Excel or LibreOffice is needed.";
 
         var result = Generate();
 
-        Assert.Equal([new ReportIssue("bill.xlsx", "LibreOffice is needed.")], result.Issues);
+        Assert.Equal([new ReportIssue("bill.xlsx", "Microsoft Excel or LibreOffice is needed.")], result.Issues);
         Assert.Equal([Letter, Letter], ReportPdf.Open(result.FilePath).PageSizes);
     }
 
@@ -256,6 +257,19 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
         var workFolder = Path.Combine(_paths.TempRoot, "work");
 
         var pdfPath = new LibreOfficeConverter(_paths).ConvertToPdf(WriteXlsx("bill.xlsx"), workFolder, CancellationToken.None);
+
+        Assert.StartsWith(workFolder, pdfPath);
+        using var pdf = PdfSharp.Pdf.IO.PdfReader.Open(pdfPath, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+        Assert.True(pdf.PageCount >= 1);
+    }
+
+    [ExcelFact]
+    [SupportedOSPlatform("windows")]
+    public void Excel_ConvertsXlsxToPdf()
+    {
+        var workFolder = Path.Combine(_paths.TempRoot, "work");
+
+        var pdfPath = new ExcelConverter().ConvertToPdf(WriteXlsx("bill.xlsx"), workFolder, CancellationToken.None);
 
         Assert.StartsWith(workFolder, pdfPath);
         using var pdf = PdfSharp.Pdf.IO.PdfReader.Open(pdfPath, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
@@ -365,6 +379,16 @@ public sealed class ExpenseReportGeneratorTests : IDisposable
             pdf.Save(path);
             return path;
         }
+    }
+}
+
+/// <summary>A test that runs only where Microsoft Excel is installed, and shows as skipped elsewhere.</summary>
+public sealed class ExcelFactAttribute : FactAttribute
+{
+    public ExcelFactAttribute()
+    {
+        if (!OperatingSystem.IsWindows() || !new ExcelConverter().IsInstalled)
+            Skip = "Microsoft Excel is not installed.";
     }
 }
 

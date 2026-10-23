@@ -33,7 +33,10 @@ public partial class App : Application
         services.AddSingleton<AppPaths>();
         services.AddSingleton<IProfileService, ProfileService>();
         services.AddSingleton<ReceiptFiles>();
-        services.AddSingleton<IOfficeConverter, LibreOfficeConverter>();
+        // In order of preference: Excel for spreadsheets, LibreOffice for everything else and when Excel is missing.
+        services.AddSingleton<IOfficeApp, ExcelConverter>();
+        services.AddSingleton<IOfficeApp, LibreOfficeConverter>();
+        services.AddSingleton<IOfficeConverter, OfficeConverter>();
         services.AddSingleton<ExpenseReportGenerator>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

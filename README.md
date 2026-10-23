@@ -52,14 +52,18 @@ the old file is kept.
   the table of contents: each line names the page its receipt starts on, and clicking the line jumps there.
 - **Receipts follow,** each once, in the order the summary first lists them (several expenses can share a receipt).
   PDFs are added as they are; JPG, PNG and BMP images get a page each, turned to match the photo's EXIF orientation.
-- **XLSX** (also XLS, XLSM, ODS, CSV, DOC, DOCX, ODT, RTF, GIF, TIFF and WebP) receipts are converted to PDF by
-  [LibreOffice](https://www.libreoffice.org), run headless as a separate process. LibreOffice is optional; without
-  it, or for a file that can't be read (missing, damaged, password-protected, unsupported type), the report gets a
-  page saying the receipt is not included, and Pawscent lists those receipts after creating the report.
+- **Spreadsheets** (XLSX, XLSM, XLS, ODS, CSV) are converted to PDF by Microsoft Excel if it is installed, otherwise
+  by [LibreOffice](https://www.libreoffice.org). **Other formats** (DOC, DOCX, ODT, RTF, GIF, TIFF, WebP) need
+  LibreOffice. If the first program fails on a file, the next one installed is tried. Neither program is part of
+  Pawscent and both are optional: without them, or for a file that can't be read (missing, damaged,
+  password-protected, unsupported type), the report gets a page saying the receipt is not included and naming what
+  to install, and Pawscent lists those receipts after creating the report.
 - **Bookmarks** (PDF outline): *Summary*, then *Receipts* with one entry per expense.
 - Paper is US Letter where that is the usual size (US, Canada, Mexico and a few others), otherwise A4.
 
-Reports use the Windows font Segoe UI (Arial if missing). LibreOffice runs offline with its own settings in
+Reports use the Windows font Segoe UI (Arial if missing). Excel runs as a hidden instance of its own (through COM
+automation) that opens the receipt read-only with macros and external links off, exports every sheet with the
+workbook's print settings, and quits. LibreOffice runs headless and offline as a separate process, with its own settings in
 `%LOCALAPPDATA%\Pawscent\LibreOffice`, apart from yours. PDFs are built with PDFsharp and MigraDoc **6.2.4**, the last
 MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
 
@@ -73,8 +77,9 @@ MIT-licensed release (6.5 and later are AGPL-3.0), so the version is pinned.
 
 ## Build
 
-Requires Windows 10/11 with the .NET 10 SDK (Visual Studio 2026 with the WinUI workload is optional). The test that
-converts an XLSX file runs only where LibreOffice is installed and is reported as skipped elsewhere.
+Requires Windows 10/11 with the .NET 10 SDK (Visual Studio 2026 with the WinUI workload is optional). The tests that
+convert an XLSX file with Excel or LibreOffice run only where that program is installed and are reported as skipped
+elsewhere.
 
 ```powershell
 dotnet test tests/Pawscent.Core.Tests
