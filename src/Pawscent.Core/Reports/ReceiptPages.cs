@@ -5,7 +5,7 @@ using PdfSharp.Pdf.IO;
 
 namespace Pawscent.Core.Reports;
 
-/// <summary>Turns receipt files into report pages: PDFs as they are, images one per page, other formats via LibreOffice.</summary>
+/// <summary>Turns receipt files into report pages: PDFs as they are, images one per page, other formats via Excel or LibreOffice.</summary>
 internal static class ReceiptPages
 {
     private const double Margin = 36;
@@ -16,7 +16,7 @@ internal static class ReceiptPages
         ".jpg", ".jpeg", ".png", ".bmp",
     };
 
-    // Formats converted to PDF by LibreOffice first.
+    // Formats converted to PDF by an office program first (see OfficeConverter).
     private static readonly HashSet<string> OfficeExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".xlsx", ".xlsm", ".xls", ".ods", ".csv", ".docx", ".doc", ".odt", ".rtf", ".gif", ".tif", ".tiff", ".webp",

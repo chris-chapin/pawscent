@@ -6,10 +6,9 @@ namespace Pawscent.Core.Reports;
 
 /// <summary>
 /// Converts spreadsheets, documents and less common image formats to PDF by running an installed LibreOffice
-/// headless (<c>soffice --headless --convert-to pdf</c>). LibreOffice is optional: without it these receipts are
-/// replaced by a notice page.
+/// headless (<c>soffice --headless --convert-to pdf</c>). LibreOffice is optional.
 /// </summary>
-public sealed class LibreOfficeConverter(AppPaths paths) : IOfficeConverter
+public sealed class LibreOfficeConverter(AppPaths paths) : IOfficeApp
 {
     public static readonly TimeSpan Timeout = TimeSpan.FromMinutes(2);
 
@@ -31,10 +30,16 @@ public sealed class LibreOfficeConverter(AppPaths paths) : IOfficeConverter
         return installFolders.Concat(pathFolders).Select(f => Path.Combine(f, fileName)).FirstOrDefault(File.Exists);
     }
 
+    public string Name => "LibreOffice";
+
+    public bool IsInstalled => FindExecutable() is not null;
+
+    // Every format reports convert: LibreOffice opens them all.
+    public bool Converts(string extension) => true;
+
     public string ConvertToPdf(string sourcePath, string workFolder, CancellationToken cancellationToken)
     {
-        var soffice = FindExecutable() ?? throw new ReceiptConversionException(
-            "LibreOffice is needed to add this file to a report. Install LibreOffice and create the report again.");
+        var soffice = FindExecutable() ?? throw new ReceiptConversionException("LibreOffice is not installed.");
 
         // LibreOffice opens a copy with a plain name, so its lock files never land next to the receipt.
         Directory.CreateDirectory(workFolder);

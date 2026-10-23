@@ -14,6 +14,8 @@ Windows 11 desktop app. WinUI 3 + .NET 10.
 - Avoid `[ObservableProperty]` partial properties (generator failed, CS9248); write observable properties by hand with `SetProperty(ref field, value)`.
 - `TreatWarningsAsErrors` is on (Directory.Build.props).
 - Profiles = workspace folders under `Profiles\<Name>\` with `profile.json`.
-- PDF reports: PDFsharp + MigraDoc pinned to **6.2.4** (last MIT release; 6.5+ is AGPL, don't upgrade). XLSX and other
-  office files go through an installed LibreOffice (`soffice --headless`, optional, profile under `AppPaths.LibreOfficeProfile`).
+- PDF reports: PDFsharp + MigraDoc pinned to **6.2.4** (last MIT release; 6.5+ is AGPL, don't upgrade). Office files go
+  through installed programs, never bundled (`OfficeConverter` picks the first installed `IOfficeApp`, falling back on
+  failure): spreadsheets use Excel via COM automation (`ExcelConverter`), then LibreOffice; other formats only
+  LibreOffice (`soffice --headless`, profile under `AppPaths.LibreOfficeProfile`). Both optional.
 - WinUI can't build on Linux; CI (`.github/workflows/build.yml`, windows-latest) is the build check.
