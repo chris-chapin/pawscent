@@ -20,6 +20,14 @@
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1603;NU1701</WarningsNotAsErrors>
   </PropertyGroup>
 
+  <!-- WinAppSDK 1.8's XAML targets (GetVCInstallPath) enumerate <VS>\VC\Tools\MSVC when building inside
+       Visual Studio and crash if the C++ workload isn't installed. The vcmeta.dll it looks for is only used
+       by C++ XAML projects, so pre-setting the paths skips that lookup. -->
+  <PropertyGroup Condition="'$(VsInstallRoot)' != '' and !Exists('$(VsInstallRoot)\VC\Tools\MSVC')">
+    <VCInstallPath32 Condition="'$(VCInstallPath32)' == ''">n/a</VCInstallPath32>
+    <VCInstallPath64 Condition="'$(VCInstallPath64)' == ''">n/a</VCInstallPath64>
+  </PropertyGroup>
+
   <ItemGroup>
     <Content Include="Assets\*.png" />
     <Manifest Include="$(ApplicationManifest)" />
